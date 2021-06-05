@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Horloge binaire">
+<meta name="author" content="Guillaume JANDOT">
+<title>horloBin</title>
+<style>
+#version a { font-size:0.8em; color:#777777; position:fixed; bottom:5px; right:9px; text-decoration:none; }
+.modon { text-decoration:none; cursor:default; border:1px solid black; }
+.modoff { text-decoration:line-through; cursor:pointer; } 
+</style>
+</head>
+<body onload="start()">
+<noscript>L'application nécessite l'activation de Javascript.</noscript>
+<script type="text/javascript">
+
+ const VERNUM = "0.001"; //G. JANDOT 02/06/2021
+ 
+ const REFRESH_MS = 200;
+ 
+ var canvas, ctx;
+ var tab_couleurs = ["red", "orange", "yellow", "green", "blue", "purple"];
+ var cur_mod = 1;
+ var interval;
+ 
+// refactoring / helpers
+ function elt(nom_obj)  { return document.getElementById(nom_obj); }
+ function show(nom_obj) { elt(nom_obj).style.display = ""; }
+ function hide(nom_obj) { elt(nom_obj).style.display = "none"; }
+  
+//////////////////////////
+ 
+ function start()
+ {
+	elt("vernum").innerHTML = VERNUM;
+	canvas = elt('horlo');
+	ctx = canvas.getContext('2d');
+	
+	ctx.font = "10px Arial";
+
+	drawScale(1);
+	
+	interval = setInterval(showTime, REFRESH_MS);
+ }
+ 
+ function drawScale(mode)
+ {
+	ctx.fillStyle = "black";
+	switch (mode) {
+		case 2:
+			//échelle
+			var u = 1;
+			for (i=0; i<4; i++)
+			{
+				ctx.fillText(u, 200, 22+25*(3-i));
+				u = u*2;
+			}
+			//unité
+			ctx.fillText("H", 40, 130);
+			ctx.fillText("M", 100, 130);
+			ctx.fillText("S", 160, 130);
+			break;
+		default: //1
+			//échelle
+			var u = 1;
+			for (i=0; i<6; i++)
+			{
+				ctx.fillText(u, 120, 22+25*(5-i));
+				u = u*2;
+			}
+			//unité
+			ctx.fillText("H", 26, 170);
+			ctx.fillText("M", 56, 170);
+			ctx.fillText("S", 86, 170);
+	}
+}
+ 
+ function drawCirc(x,y,r)
+ {
+ 	ctx.beginPath();
+	ctx.arc(x*30, 20+25*y, r, 0, 2 * Math.PI);
+	var color = tab_couleurs[y];
+	if (r==1)
+	{
+		color = "black";
+	}
+	ctx.fillStyle = color;
+	ctx.fill();
+ }
+ 
+ function canvas_clear(mode)
+ {
+ //épargne le texte (échelle et unités) pour ne pas avoir à le retracer
+	switch (mode) {
+		case 2:
+			ctx.clearRect(0, 0, 200, 120);
+			break;
+		case 1:
+			ctx.clearRect(0, 0, 120, 160);
+			break;
+		default: //0 : on efface tout
+			ctx.clearRect(0, 0, 300, 300);
+	}
+ }
+ 
+ 
+ function dec_norm(num)
+ //ajoute le 0 des dizaines si nécessaire
+ {
+	var ret = num;
+	if (num<9)
+	{
+		ret = "0" + ret;
+	}
+	return ret;
+ }
+
+ function bin_norm(num, long)
+ //allonge num (binaire) à la longueur <long> en ajoutant si besoin des zéros à gauche
+ {
+	var ret = num;
+	for (i=0; i<(long-num.length); i++)
+	{
+		ret = "0" + ret;
+	}
+	return ret;
+ }
+
+ function disp_part(unit, posx)
+ //unit=bin_h|bin_m|bins
+ //posx
+ {
+ 	for (j=0; j<unit.length; j++)
+	{
+		var pos = unit.length-j-1;
+		if (unit[pos]=='1')
+		{
+			drawCirc(posx,pos,7);
+		}
+		else
+		{
+			drawCirc(posx,pos,1);
+		}
+	}
+ }
+ 
+ function disp_part2(unit, posx)
+ //unit=bin_h|bin_m|bins
+ //posx
+ {
+	var l = unit.length;
+	console.log(unit);
+	for (j=l; j>0; j--)
+	{
+		var pos = j;
+		console.log(unit[l-pos]);
+		if (unit[l-pos]=='1')
+		{
+			drawCirc(posx,4-pos,7);
+		}
+		else
+		{
+			drawCirc(posx,4-pos,1);
+		}
+	}
+ }
+
+ 
+ function showTime()
+ {
+	var horodate = new Date();	
+	elt("time").innerHTML = dec_norm(horodate.getHours()) + ":" + dec_norm(horodate.getMinutes()) + "." + dec_norm(horodate.getSeconds());
+	var bin_h = bin_norm(horodate.getHours().toString(2), 6);
+	var bin_m = bin_norm(horodate.getMinutes().toString(2), 6);
+	var bin_s = bin_norm(horodate.getSeconds().toString(2), 6);
+
+	elt("bintime").innerHTML = bin_h + ":" + bin_m + "." + bin_s;
+
+	canvas_clear(1);
+	disp_part(bin_h, 1);
+	disp_part(bin_m, 2);
+	disp_part(bin_s, 3);
+ }
+
+ function showTime2()
+ {
+	var horodate = new Date();
+	elt("time").innerHTML = dec_norm(horodate.getHours()) + ":" + dec_norm(horodate.getMinutes()) + "." + dec_norm(horodate.getSeconds());
+	
+	var bin_h1 = bin_norm(Math.floor(horodate.getHours()/10).toString(2));
+	var bin_h2 = bin_norm((horodate.getHours()%10).toString(2), 4);
+	var bin_m1 = bin_norm(Math.floor(horodate.getMinutes()/10).toString(2), 3);
+	var bin_m2 = bin_norm((horodate.getMinutes()%10).toString(2), 4);
+	var bin_s1 = bin_norm(Math.floor(horodate.getSeconds()/10).toString(2), 3);
+	var bin_s2 = bin_norm((horodate.getSeconds()%10).toString(2), 4);
+ 	elt("bintime").innerHTML = bin_h1 + "." + bin_h2;
+	elt("bintime").innerHTML += ":" + bin_m1 + "." + bin_m2;
+	elt("bintime").innerHTML += ":" + bin_s1 + "." + bin_s2;
+	
+	canvas_clear(2);
+	disp_part2(bin_h1, 1);
+	disp_part2(bin_h2, 2);
+	disp_part2(bin_m1, 3);
+	disp_part2(bin_m2, 4);
+	disp_part2(bin_s1, 5);
+	disp_part2(bin_s2, 6);
+	ctx.beginPath();
+	ctx.moveTo(75, 10);
+	ctx.lineTo(75, 120);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(135, 10);
+	ctx.lineTo(135, 120);
+	ctx.stroke();
+ }
+ 
+ function showmod(num)
+ {
+	if (num!=cur_mod)
+	{
+		cur_mod = num;
+		clearInterval(interval);
+		canvas_clear(0);
+		drawScale(num);
+		switch (num) {
+			case 2:
+				interval = setInterval(showTime2, REFRESH_MS);
+				elt("model1").className = "modoff";
+				elt("model2").className = "modon";
+				break;
+			default: //1
+				interval = setInterval(showTime, REFRESH_MS);
+				elt("model2").className = "modoff";
+				elt("model1").className = "modon";
+		}
+	}
+ }
+ 
+</script>
+<BR>
+<div id="time"></div>
+<div id="bintime"></div>
+<div id="modeles">
+<span id="model1" class="modon" onclick="showmod(1)">Modèle 1</span>
+<span id="model2" class="modoff" onclick="showmod(2)">Modèle 2</span>
+</div><!--modeles-->
+<canvas id="horlo" width="300" height="300"></canvas>
+
+<div id="version"><A HREF="https://github.com/gjandot/HorloBin">Version <span id="vernum">0.000</span></A></div>
+
+</body>
+</html>
