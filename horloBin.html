@@ -22,7 +22,7 @@
 <noscript>L'application nécessite l'activation de Javascript.</noscript>
 <script type="text/javascript">
 
- const VERNUM = "0.002"; //G. JANDOT 05/06/2021
+ const VERNUM = "0.003"; //G. JANDOT 27/06/2021
  
  const REFRESH_MS = 200;
  
@@ -32,6 +32,8 @@
  var tab_couleurs = ["red", "orange", "yellow", "green", "blue", "purple"];
  var cur_mod = 1;
  var interval;
+ var horodate = new Date();
+ var sep = ":";
  
 // refactoring / helpers
  function elt(nom_obj)  { return document.getElementById(nom_obj); }
@@ -43,6 +45,7 @@
  function start()
  {
 	elt("vernum").innerHTML = VERNUM;
+	
 	canvas = elt('horlo');
 	ctx = canvas.getContext('2d');
 	
@@ -172,14 +175,20 @@
 		}
 	}
  }
+ 
+ function updateTime()
+ //normal clock
+ {
+	horodate = new Date();	
+	sep = ":";
+	if (horodate.getSeconds()%2==0) { sep = "."};
+	elt("time").innerHTML = dec_norm(horodate.getHours()) + ":" + dec_norm(horodate.getMinutes()) + sep + dec_norm(horodate.getSeconds());
+ }
 
  
  function showTime()
  {
-	var horodate = new Date();	
-	var sep = ":";
-	if (horodate.getSeconds()%2==0) { sep = "."};
-	elt("time").innerHTML = dec_norm(horodate.getHours()) + ":" + dec_norm(horodate.getMinutes()) + sep + dec_norm(horodate.getSeconds());
+	updateTime();
 	var bin_h = bin_norm(horodate.getHours().toString(2), 6);
 	var bin_m = bin_norm(horodate.getMinutes().toString(2), 6);
 	var bin_s = bin_norm(horodate.getSeconds().toString(2), 6);
@@ -194,8 +203,7 @@
 
  function showTime2()
  {
-	var horodate = new Date();
-	elt("time").innerHTML = dec_norm(horodate.getHours()) + ":" + dec_norm(horodate.getMinutes()) + "." + dec_norm(horodate.getSeconds());
+	updateTime();
 	
 	var bin_h1 = bin_norm(Math.floor(horodate.getHours()/10).toString(2),2);
 	var bin_h2 = bin_norm((horodate.getHours()%10).toString(2), 4);
@@ -205,7 +213,8 @@
 	var bin_s2 = bin_norm((horodate.getSeconds()%10).toString(2), 4);
  	elt("bintime").innerHTML = bin_h1 + "." + bin_h2;
 	elt("bintime").innerHTML += ":" + bin_m1 + "." + bin_m2;
-	elt("bintime").innerHTML += ":" + bin_s1 + "." + bin_s2;
+
+	elt("bintime").innerHTML += sep + bin_s1 + "." + bin_s2;
 	
 	canvas_clear(2);
 	disp_part2(bin_h1, 1);
